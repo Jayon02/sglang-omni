@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
-class Ralay(ABC):
+class Relay(ABC):
     """
     Abstract base class for relay connectors.
 

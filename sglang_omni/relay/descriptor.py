@@ -38,7 +38,7 @@ except ImportError as e:
 
 # Handle forward reference to Connection
 if TYPE_CHECKING:
-    from sglang_omni.relay.nvxl.nixl_connect import Connection
+    from sglang_omni.relay.nixl.connector import Connection
 
 try:
     import cupy as array_module
@@ -426,11 +426,11 @@ class Descriptor:
         """
         Deregisters the memory of the descriptor with NIXL.
         """
-        from sglang_omni.relay.nvxl.nixl_connect import Connection
+        from sglang_omni.relay.nixl.connector import Connection
 
         if not isinstance(connection, Connection):
             raise TypeError(
-                "Argument `connection` must be `sglang_omni.relay.nvxl.nixl_connect.Connection`."
+                "Argument `connection` must be `sglang_omni.relay.nixl.connector.Connection`."
             )
         if connection != self._connection:
             raise RuntimeError(
@@ -459,11 +459,11 @@ class Descriptor:
         """
         Registers the memory of the descriptor with NIXL.
         """
-        from sglang_omni.relay.nvxl.nixl_connect import Connection
+        from sglang_omni.relay.nixl.connector import Connection
 
         if not isinstance(connection, Connection):
             raise TypeError(
-                "Argument `connection` must be `sglang_omni.relay.nvxl.nixl_connect.Connection`."
+                "Argument `connection` must be `sglang_omni.relay.nixl.connector.Connection`."
             )
         if self._data_ptr == 0:
             raise ValueError("Cannot register memory with a null pointer.")

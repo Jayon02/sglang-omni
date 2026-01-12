@@ -7,9 +7,9 @@ from multiprocessing import shared_memory as _shm
 from typing import Any
 
 from sglang_omni.core.types import SHMMetadata
-from sglang_omni.relay.base_operations import BaseReadableOperation, BaseReadOperation
 from sglang_omni.relay.descriptor import Descriptor
-from sglang_omni.relay.ralay import Ralay
+from sglang_omni.relay.operations.shm import SHMReadableOperation, SHMReadOperation
+from sglang_omni.relay.relays.base import Relay
 
 logger = logging.getLogger(__name__)
 
@@ -48,53 +48,13 @@ def shm_read_bytes(meta: SHMMetadata) -> bytes:
     return data
 
 
-class SHMReadableOperation(BaseReadableOperation):
-    """Operation object returned by SHMRelay.put(), compatible with NixlRalay interface.
-
-    Provides:
-    - metadata(): Returns the SHMMetadata for the operation
-    - wait_for_completion(): No-op for SHM (write is synchronous)
-    """
-
-    def __init__(self, shm_metadata: SHMMetadata):
-        self._metadata = shm_metadata
-
-    def metadata(self) -> SHMMetadata:
-        """Return the SHM metadata for this operation."""
-        return self._metadata
-
-    async def wait_for_completion(self) -> None:
-        """Wait for the operation to complete. No-op for SHM (synchronous)."""
-
-
-class SHMReadOperation(BaseReadOperation):
-    """Operation object returned by SHMRelay.get(), compatible with NixlRalay interface.
-
-    Provides:
-    - wait_for_completion(): No-op for SHM (read is synchronous)
-    - data: The deserialized data (available immediately)
-    """
-
-    def __init__(self, data: Any, size: int):
-        self.data = data
-        self._size = size
-
-    @property
-    def size(self) -> int:
-        """Return the size of the data in bytes."""
-        return self._size
-
-    async def wait_for_completion(self) -> None:
-        """Wait for the operation to complete. No-op for SHM (synchronous)."""
-
-
-class SHMRelay(Ralay):
+class SHMRelay(Relay):
     """Shared memory relay for inter-stage data transfer.
 
     This relay uses Python's multiprocessing.shared_memory for
     transferring pickle-serialized Python objects between stages.
 
-    Interface is designed to be compatible with NixlRalay:
+    Interface is designed to be compatible with NIXLRelay:
     - put(descriptors) -> SHMReadableOperation (with .metadata() method)
     - get(metadata, descriptors) -> SHMReadOperation (with .wait_for_completion() method)
     """

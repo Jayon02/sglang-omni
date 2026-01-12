@@ -28,16 +28,16 @@ def worker_configs():
     ]
 
 
-class TestNixlRalay:
-    """Basic test suite for NixlRalay."""
+class TestNIXLRelay:
+    """Basic test suite for NIXLRelay."""
 
     def test_transfer_between_workers(self, worker_configs):
         """Test data transfer between two workers."""
-        from sglang_omni.relay.nixl_ralay import NixlRalay
+        from sglang_omni.relay.relays.nixl import NIXLRelay
 
         config0, config1 = worker_configs
-        connector0 = NixlRalay(config0)
-        connector1 = NixlRalay(config1)
+        connector0 = NIXLRelay(config0)
+        connector1 = NIXLRelay(config1)
 
         try:
             device0 = (
@@ -86,11 +86,11 @@ class TestNixlRalay:
     @pytest.mark.asyncio
     async def test_transfer_between_workers_async(self, worker_configs):
         """Test async data transfer between two workers."""
-        from sglang_omni.relay.nixl_ralay import NixlRalay
+        from sglang_omni.relay.relays.nixl import NIXLRelay
 
         config0, config1 = worker_configs
-        connector0 = NixlRalay(config0)
-        connector1 = NixlRalay(config1)
+        connector0 = NIXLRelay(config0)
+        connector1 = NIXLRelay(config1)
 
         try:
             device0 = (

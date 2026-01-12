@@ -16,7 +16,7 @@ from sglang_omni.core.types import (
 from sglang_omni.pipeline.input_handler import DirectInput, InputHandler
 from sglang_omni.pipeline.worker import Worker
 from sglang_omni.relay import SHMRelay
-from sglang_omni.relay.ralay import Ralay
+from sglang_omni.relay.relays.base import Relay
 from sglang_omni.transport.control_plane import StageControlPlane
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class Stage:
         abort_endpoint: str,
         endpoints: dict[str, str],
         input_handler: InputHandler | None = None,
-        relay: Ralay | None = None,
+        relay: Relay | None = None,
     ):
         """Initialize a stage.
 

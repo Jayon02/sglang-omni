@@ -5,19 +5,19 @@ import logging
 from typing import Any
 
 from sglang_omni.relay.descriptor import Descriptor
-from sglang_omni.relay.nvxl.nixl_connect import (
+from sglang_omni.relay.nixl import (
     Connector,
     RdmaMetadata,
     ReadableOperation,
     ReadOperation,
 )
-from sglang_omni.relay.ralay import Ralay
+from sglang_omni.relay.relays.base import Relay
 
 logger = logging.getLogger(__name__)
 
 
-class NixlRalay(Ralay):
-    """Nixl-based relay implementation using dynamo.nixl_connect."""
+class NIXLRelay(Relay):
+    """NIXL-based relay implementation using dynamo.nixl_connect."""
 
     def __init__(self, config: dict[str, Any]):
         if Connector is None:
@@ -76,12 +76,12 @@ class NixlRalay(Ralay):
             return coro_or_result
 
     def _init_sync(self):
-        """Initialize Nixl connector synchronously."""
+        """Initialize NIXL connector synchronously."""
         try:
             self.connector = Connector(worker_id=self.config.get("worker_id"))
-            logger.info("NixlRalay initialized successfully")
+            logger.info("NIXLRelay initialized successfully")
         except Exception as e:
-            logger.error("Failed to initialize Nixl connector: %s", e)
+            logger.error("Failed to initialize NIXL connector: %s", e)
             raise
 
     def put(self, descriptors: list[Descriptor]) -> ReadableOperation:
@@ -113,7 +113,7 @@ class NixlRalay(Ralay):
             self._metrics["bytes_transferred"] += total_size
 
             logger.info(
-                "NixlRalay: created readable for %d descriptors, %d bytes",
+                "NIXLRelay: created readable for %d descriptors, %d bytes",
                 len(descriptors),
                 total_size,
             )
@@ -122,7 +122,7 @@ class NixlRalay(Ralay):
 
         except Exception as e:
             self._metrics["errors"] += 1
-            logger.error("NixlRalay put failed: %s", e)
+            logger.error("NIXLRelay put failed: %s", e)
             raise
 
     def get(self, metadata: Any, descriptors: list[Descriptor]) -> Any:
@@ -156,7 +156,7 @@ class NixlRalay(Ralay):
             self._metrics["gets"] += 1
 
             logger.debug(
-                "NixlRalay: began read for %d descriptors, %d bytes",
+                "NIXLRelay: began read for %d descriptors, %d bytes",
                 len(descriptors),
                 total_size,
             )
@@ -165,7 +165,7 @@ class NixlRalay(Ralay):
 
         except Exception as e:
             self._metrics["errors"] += 1
-            logger.error("NixlRalay get failed: %s", e)
+            logger.error("NIXLRelay get failed: %s", e)
             raise
 
     async def get_async(
@@ -200,7 +200,7 @@ class NixlRalay(Ralay):
             self._metrics["gets"] += 1
 
             logger.debug(
-                "NixlRalay: began read for %d descriptors, %d bytes",
+                "NIXLRelay: began read for %d descriptors, %d bytes",
                 len(descriptors),
                 total_size,
             )
@@ -209,7 +209,7 @@ class NixlRalay(Ralay):
 
         except Exception as e:
             self._metrics["errors"] += 1
-            logger.error("NixlRalay get failed: %s", e)
+            logger.error("NIXLRelay get failed: %s", e)
             raise
 
     def cleanup(self, request_id: str) -> None:
@@ -222,7 +222,7 @@ class NixlRalay(Ralay):
         for key in keys_to_remove:
             del self._pending_operations[key]
 
-        logger.debug("NixlRalay: cleanup requested for %s", request_id)
+        logger.debug("NIXLRelay: cleanup requested for %s", request_id)
 
     def health(self) -> dict[str, Any]:
         """Get connector health status."""
@@ -247,9 +247,9 @@ class NixlRalay(Ralay):
                     self._run_maybe_async(result)
 
                 self.connector = None
-                logger.info("NixlRalay closed")
+                logger.info("NIXLRelay closed")
             except Exception as e:
-                logger.error("Error closing Nixl connector: %s", e)
+                logger.error("Error closing NIXL connector: %s", e)
 
     async def put_async(self, descriptors: list[Descriptor]) -> ReadableOperation:
         """
@@ -280,7 +280,7 @@ class NixlRalay(Ralay):
             self._metrics["bytes_transferred"] += total_size
 
             logger.info(
-                "NixlRalay: created readable for %d descriptors, %d bytes",
+                "NIXLRelay: created readable for %d descriptors, %d bytes",
                 len(descriptors),
                 total_size,
             )
@@ -289,5 +289,5 @@ class NixlRalay(Ralay):
 
         except Exception as e:
             self._metrics["errors"] += 1
-            logger.error("NixlRalay put failed: %s", e)
+            logger.error("NIXLRelay put failed: %s", e)
             raise

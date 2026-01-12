@@ -31,9 +31,10 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-# Import descriptor-related classes from descriptor.py
-from sglang_omni.relay.base_operations import BaseReadableOperation, BaseReadOperation
 from sglang_omni.relay.descriptor import Descriptor, DeviceKind, SerializedDescriptor
+
+# Import descriptor-related classes from descriptor.py
+from sglang_omni.relay.operations.base import BaseReadableOperation, BaseReadOperation
 
 try:
     pass

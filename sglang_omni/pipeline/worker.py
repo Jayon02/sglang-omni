@@ -102,7 +102,7 @@ class Worker:
         try:
             # Create a descriptor with the data reference
             # For SHMRelay: uses _data_ref to pickle the object
-            # For NixlRalay: should handle tensor/buffer data properly
+            # For NIXLRelay: should handle tensor/buffer data properly
             descriptor = Descriptor((1, 0, "cpu", data))
 
             # Put data and get metadata

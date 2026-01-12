@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Unified tests for relay implementations (NixlRalay and SHMRelay)."""
+"""Unified tests for relay implementations (NIXLRelay and SHMRelay)."""
 
 import pytest
 import torch
@@ -10,20 +10,20 @@ from sglang_omni.relay.descriptor import Descriptor
 @pytest.fixture(params=["nixl", "shm"])
 def relay_class(request):
     if request.param == "nixl":
-        from sglang_omni.relay.nixl_ralay import NixlRalay
+        from sglang_omni.relay.relays.nixl import NIXLRelay
 
-        return NixlRalay
+        return NIXLRelay
     else:
-        from sglang_omni.relay.shm_relay import SHMRelay
+        from sglang_omni.relay.relays.shm import SHMRelay
 
         return SHMRelay
 
 
 @pytest.fixture
 def relay_configs(relay_class):
-    if relay_class.__name__ == "NixlRalay":
+    if relay_class.__name__ == "NIXLRelay":
         if torch.cuda.is_available() and torch.cuda.device_count() < 2:
-            pytest.skip("NixlRalay requires at least 2 GPUs")
+            pytest.skip("NIXLRelay requires at least 2 GPUs")
         return [
             {
                 "host": "127.0.0.1",
@@ -44,7 +44,7 @@ def relay_configs(relay_class):
 
 
 def _get_device(relay_class, config):
-    if relay_class.__name__ == "NixlRalay":
+    if relay_class.__name__ == "NIXLRelay":
         return f'cuda:{config["gpu_id"]}' if torch.cuda.is_available() else "cpu"
     return "cpu"
 

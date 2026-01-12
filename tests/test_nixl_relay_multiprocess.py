@@ -18,7 +18,7 @@ if torch.cuda.is_available():
 
 try:
     from sglang_omni.relay.descriptor import Descriptor
-    from sglang_omni.relay.nvxl.nixl_connect import RdmaMetadata
+    from sglang_omni.relay.nixl import RdmaMetadata
 except ImportError:
     Descriptor = None
     RdmaMetadata = None
@@ -28,9 +28,9 @@ def sender_process(config, queue, done_event, num_transfers, data_size, results)
     """Sender process: creates data and sends via put_async."""
 
     async def run():
-        from sglang_omni.relay.nixl_ralay import NixlRalay
+        from sglang_omni.relay.relays.nixl import NIXLRelay
 
-        connector = NixlRalay(config)
+        connector = NIXLRelay(config)
         device = f'cuda:{config["gpu_id"]}' if torch.cuda.is_available() else "cpu"
 
         try:
@@ -77,10 +77,10 @@ def receiver_process(config, queue, done_event, num_transfers, results):
     """Receiver process: receives data via get_async."""
 
     async def run():
-        from sglang_omni.relay.nixl_ralay import NixlRalay
-        from sglang_omni.relay.nvxl.nixl_connect import RdmaMetadata
+        from sglang_omni.relay.nixl import RdmaMetadata
+        from sglang_omni.relay.relays.nixl import NIXLRelay
 
-        connector = NixlRalay(config)
+        connector = NIXLRelay(config)
         device = f'cuda:{config["gpu_id"]}' if torch.cuda.is_available() else "cpu"
 
         try:
@@ -132,8 +132,8 @@ def receiver_process(config, queue, done_event, num_transfers, results):
 
 
 @pytest.mark.skipif(Descriptor is None, reason="Descriptor not available")
-def test_multiprocess_transfer_with_nixl_ralay():
-    """Test data transfer between two processes using NixlRalay."""
+def test_multiprocess_transfer_with_nixl_relay():
+    """Test data transfer between two processes using NIXLRelay."""
     if torch.cuda.is_available() and torch.cuda.device_count() < 2:
         pytest.skip("Need at least 2 GPUs for this test")
 
