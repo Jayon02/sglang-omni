@@ -8,6 +8,7 @@ from sglang_omni.relay.nixl.connector import (
     ReadableOperation,
     ReadOperation,
     Remote,
+    SHMMetadata,
     WritableOperation,
     WriteOperation,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "Connection",
     "Connector",
     "RdmaMetadata",
+    "SHMMetadata",
     "ReadableOperation",
     "ReadOperation",
     "Remote",

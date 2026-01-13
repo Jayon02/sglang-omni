@@ -183,7 +183,7 @@ class NIXLRelay(Relay):
 
         Returns
         -------
-        Any
+        ReadOperation
             Read operation object with wait_for_completion() method
         """
         if not self.connector:

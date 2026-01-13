@@ -12,12 +12,12 @@ from sglang_omni.pipeline.stage import Stage
 from sglang_omni.pipeline.worker import Worker
 
 # Re-export from submodules for convenience
+# Re-export from submodules for convenience
 from sglang_omni.proto import (
     AbortMessage,
     CompleteMessage,
     DataReadyMessage,
     RequestState,
-    SHMMetadata,
     StageInfo,
 )
 
@@ -40,5 +40,4 @@ __all__ = [
     "DataReadyMessage",
     "AbortMessage",
     "CompleteMessage",
-    "SHMMetadata",
 ]

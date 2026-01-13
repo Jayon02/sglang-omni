@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-from .data import SHMMetadata
+# Import SHMMetadata from relay.nixl where it has full support for new format
+from sglang_omni.relay.nixl import SHMMetadata
+
 from .messages import (
     AbortMessage,
     CompleteMessage,
