@@ -251,7 +251,7 @@ async def benchmark(config: TtsSeedttsBenchmarkConfig) -> dict:
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="SeedTTS benchmark for /v1/audio/speech TTS models."
+        description="SeedTTS benchmark for TTS models."
     )
     parser.add_argument(
         "--base-url",
