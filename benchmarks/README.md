@@ -56,6 +56,13 @@ python -m benchmarks.eval.benchmark_tts_seedtts \
     --model fishaudio/s2-pro \
     --output-dir results/s2pro_en --lang en --device cuda:0
 
+# 2d. Voxtral — full pipeline without voice cloning
+python -m benchmarks.eval.benchmark_tts_seedtts \
+    --meta seedtts_testset/en/meta.lst \
+    --model mistralai/Voxtral-4B-TTS-2603 --port 8000 \
+    --output-dir results/voxtral_en --lang en --max-samples 50 \
+    --no-ref-audio --voice cheerful_female
+
 # 3. Qwen3-Omni — same two-phase pipeline
 python -m benchmarks.eval.benchmark_omni_seedtts \
     --meta seedtts_testset/en/meta.lst \

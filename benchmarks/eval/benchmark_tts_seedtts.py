@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-"""SeedTTS benchmark for S2-Pro TTS: speed measurement and WER evaluation.
+"""SeedTTS benchmark for TTS models: speed and WER evaluation.
 
-Combines benchmark_tts_speed.py and voice_clone_tts_wer.py into a two-phase
-pipeline: generate audio while the server is running, then transcribe without
-the server to avoid GPU OOM.
+Combines the legacy TTS speed and WER flows into a two-phase pipeline:
+generate audio while the server is running, then transcribe without the server
+to avoid GPU OOM.
 
 The benchmark always persists generated WAVs to disk so the follow-up
 transcribe phase can reuse them without regenerating audio.  Callers who
@@ -13,10 +13,16 @@ resulting ``audio/`` directory.
 Usage (run from project root so ``benchmarks`` is on sys.path; use
 ``python -m benchmarks.eval.benchmark_tts_seedtts`` if invoking via a
 subprocess from another directory):
-    # Full pipeline (generate + transcribe)
+    # Full pipeline (generate + transcribe) for voice-clone models such as S2-Pro
     python -m benchmarks.eval.benchmark_tts_seedtts \
         --meta seedtts_testset/en/meta.lst \
         --model fishaudio/s2-pro --port 8000
+
+    # Full pipeline for plain TTS models such as Voxtral
+    python -m benchmarks.eval.benchmark_tts_seedtts \
+        --meta seedtts_testset/en/meta.lst \
+        --model mistralai/Voxtral-4B-TTS-2603 --port 8000 \
+        --no-ref-audio --voice cheerful_female
 
     # Full pipeline, streaming, high concurrency
     python -m benchmarks.eval.benchmark_tts_seedtts \
@@ -75,6 +81,7 @@ class TtsSeedttsBenchmarkConfig:
     base_url: str | None = None
     host: str = "localhost"
     port: int = 8000
+    voice: str | None = None
     # note (Chenyang): Default is voice-clone ON — S2-Pro's canonical flow
     # uses the seed-tts-eval reference audio.  The legacy ``--no-ref-audio``
     # CLI flag flips this to False for plain TTS.
@@ -121,6 +128,7 @@ def _build_results_config(
         "base_url": base_url,
         "meta": config.meta,
         "voice_clone": config.voice_clone,
+        "voice": config.voice,
         "stream": config.stream,
         "max_samples": config.max_samples,
         "max_new_tokens": config.max_new_tokens,
@@ -155,6 +163,7 @@ async def run_tts_seedtts_benchmark(
         api_url,
         stream=config.stream,
         no_ref_audio=not config.voice_clone,
+        voice=config.voice,
         save_audio_dir=save_audio_dir,
         **generation_kwargs,
     )
@@ -189,6 +198,7 @@ def run_tts_seedtts_transcribe(config: TtsSeedttsBenchmarkConfig) -> dict:
         "model": config.model,
         "meta": config.meta,
         "voice_clone": config.voice_clone,
+        "voice": config.voice,
         "max_new_tokens": config.max_new_tokens,
         "temperature": config.temperature,
         "max_samples": config.max_samples,
@@ -212,6 +222,7 @@ def _config_from_args(args: argparse.Namespace) -> TtsSeedttsBenchmarkConfig:
         port=args.port,
         model=args.model,
         meta=args.meta,
+        voice=args.voice,
         voice_clone=voice_clone,
         output_dir=args.output_dir,
         max_samples=args.max_samples,
@@ -240,7 +251,7 @@ async def benchmark(config: TtsSeedttsBenchmarkConfig) -> dict:
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="SeedTTS benchmark for S2-Pro TTS: speed and WER evaluation."
+        description="SeedTTS benchmark for /v1/audio/speech TTS models."
     )
     parser.add_argument(
         "--base-url",
@@ -255,6 +266,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         type=str,
         default="fishaudio/s2-pro",
         help="Model name for the API request.",
+    )
+    parser.add_argument(
+        "--voice",
+        type=str,
+        default=None,
+        help="Optional voice name for plain TTS models such as Voxtral.",
     )
     # ``--testset`` is a legacy alias for ``--meta`` (kept for shell history).
     parser.add_argument(

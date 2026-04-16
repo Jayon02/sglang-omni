@@ -995,6 +995,7 @@ def _build_tts_payload(
     *,
     stream: bool = False,
     no_ref_audio: bool = False,
+    voice: str | None = None,
     **gen_kwargs,
 ) -> dict:
     payload: dict = {
@@ -1005,6 +1006,8 @@ def _build_tts_payload(
     if not no_ref_audio:
         payload["ref_audio"] = sample.ref_audio
         payload["ref_text"] = sample.ref_text
+    if voice is not None:
+        payload["voice"] = voice
     for key, value in gen_kwargs.items():
         if value is not None:
             payload[key] = value

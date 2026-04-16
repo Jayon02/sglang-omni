@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """SeedTTS benchmark for Qwen3-Omni: speed measurement and WER evaluation.
 
-Combines benchmark_omni_tts_speed.py and voice_clone_omni_wer.py into a
-two-phase pipeline: generate audio while the server is running, then
-transcribe without the server to avoid GPU OOM.
+Combines the legacy Omni TTS speed and WER flows into a two-phase
+pipeline: generate audio while the server is running, then transcribe without
+the server to avoid GPU OOM.
 
 The benchmark always persists generated WAVs to disk so the follow-up
 transcribe phase can reuse them without regenerating audio.  Callers who
