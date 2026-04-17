@@ -1,31 +1,43 @@
 # SPDX-License-Identifier: Apache-2.0
-"""SeedTTS benchmark for Qwen3-Omni: speed measurement and WER evaluation.
+"""SeedTTS benchmark for Qwen3-Omni with performance and WER metrics.
 
-Runs a two-phase pipeline on the SeedTTS test set: phase 1 sends
-chat-completion requests to a running Qwen3-Omni server and persists the
-generated WAVs; phase 2 loads those WAVs offline, transcribes them with an
-ASR model, and computes WER against the reference text. Persisting audio
-between phases lets the ASR model reuse the same GPU after the server
-exits, avoiding OOM. Use ``--generate-only`` or ``--transcribe-only`` to
-run a single phase.
+Note (chenyang):
 
-Usage (run from project root so ``benchmarks`` is on sys.path; use
-``python -m benchmarks.eval.benchmark_omni_seedtts`` if invoking via a
-subprocess from another directory):
+    This benchmark is both used in CI on a subset and locally for the whole set.
+    If running locally, the audio generation and transcription are run in overlap,
+    thus Qwen3 Omni server and the ASR model share the same GPU.
+
+    On the CI, to avoid GPU OOM, we run the audio generation and transcription
+    sequentially.
+
+Usage:
+
+    # Launch the server:
+    python -m sglang_omni.cli.cli serve \
+        --model-path Qwen/Qwen3-Omni-30B-A3B-Instruct \
+        --port 8000
+
+    # Download the test set:
+    python -m benchmarks.dataset.prepare --dataset seedtts
+
     # Full pipeline (generate + transcribe)
     python -m benchmarks.eval.benchmark_omni_seedtts \
         --meta seedtts_testset/en/meta.lst \
         --output-dir results/qwen3_omni_en \
+        --max-concurrency 16 \
         --model qwen3-omni --port 8000 --max-samples 50
 
-    # Phase 1: generate audio only (server must be running)
+CI Usage:
+
+    # Generate audio only (server must be running)
     python -m benchmarks.eval.benchmark_omni_seedtts \
         --generate-only \
         --meta seedtts_testset/en/meta.lst \
         --output-dir results/qwen3_omni_en \
+        --max-concurrency 16 \
         --model qwen3-omni --port 8000 --max-samples 50
 
-    # Phase 2: transcribe + WER only (server not needed)
+    # Transcribe + WER only (server not needed)
     python -m benchmarks.eval.benchmark_omni_seedtts \
         --transcribe-only \
         --meta seedtts_testset/en/meta.lst \

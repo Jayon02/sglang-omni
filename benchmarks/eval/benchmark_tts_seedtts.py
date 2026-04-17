@@ -1,49 +1,55 @@
 # SPDX-License-Identifier: Apache-2.0
-"""SeedTTS benchmark for TTS models: speed and WER evaluation.
+"""SeedTTS benchmark for TTS models with performance and WER metrics.
 
-Runs a two-phase pipeline on the SeedTTS test set: phase 1 sends TTS
-requests to a running server and persists the generated WAVs; phase 2
-loads those WAVs offline, transcribes them with an ASR model, and
-computes WER against the reference text. Persisting audio between
-phases lets the ASR model reuse the same GPU after the server exits,
-avoiding OOM. Use ``--generate-only`` or ``--transcribe-only`` to run
-a single phase.
+Note (Qiujiang, Chenyang):
 
-Both voice-cloning models (e.g. ``fishaudio/s2-pro``, which reads
-``ref_audio``/``ref_text`` from the meta file) and plain TTS models
-(e.g. ``mistralai/Voxtral-4B-TTS-2603``, which selects a server-side
-speaker preset via ``--voice``) are supported through the same entry.
+1. Voice-clone models (e.g. fishaudio/s2-pro): default uses ref_audio /
+  ref_text from the meta file.
+2. Plain TTS (e.g. mistralai/Voxtral-4B-TTS-2603): use --no-ref-audio and
+  --voice for a server-side speaker preset.
 
-Usage (run from project root so ``benchmarks`` is on sys.path; use
-``python -m benchmarks.eval.benchmark_tts_seedtts`` if invoking via a
-subprocess from another directory):
-    # Full pipeline (generate + transcribe) for voice-clone models such as fishaudio/s2-pro
+Usage:
+
+    # Download the test set:
+    python -m benchmarks.dataset.prepare --dataset seedtts
+
+    # Launch the server:
+    1. For S2-Pro:
+    python -m sglang_omni.cli.cli serve \
+        --model-path fishaudio/s2-pro \
+        --port 8000
+
+    2. For Voxtral-4B-TTS-2603:
+    python -m sglang_omni.cli.cli serve \
+        --model-path mistralai/Voxtral-4B-TTS-2603 \
+        --port 8000
+
+    # Full pipeline (generate + transcribe) — voice cloning
     python -m benchmarks.eval.benchmark_tts_seedtts \
         --meta seedtts_testset/en/meta.lst \
+        --max-concurrency 16 \
         --model fishaudio/s2-pro --port 8000
 
-    # Full pipeline for plain TTS models such as mistralai/Voxtral-4B-TTS-2603
-    # Launch the server first in a separate shell:
-    #     python -m sglang_omni.cli.cli serve \
-    #         --model-path mistralai/Voxtral-4B-TTS-2603 --port 8000
+    # Full pipeline — plain TTS (no ref audio from testset)
     python -m benchmarks.eval.benchmark_tts_seedtts \
         --meta seedtts_testset/en/meta.lst \
         --model mistralai/Voxtral-4B-TTS-2603 --port 8000 \
-        --no-ref-audio --voice cheerful_female
+        --max-concurrency 16 \
+        --no-ref-audio --voice cheerful_female --max-samples 50
 
-    # Full pipeline, streaming, high concurrency
-    python -m benchmarks.eval.benchmark_tts_seedtts \
-        --meta seedtts_testset/en/meta.lst \
-        --model fishaudio/s2-pro --port 8000 \
-        --concurrency 8 --stream
+For CI settings, separate the generate and transcribe phases into two runs.
 
-    # Phase 1: generate audio only (server must be running)
+Usage (CI):
+
+    # Generate audio only
     python -m benchmarks.eval.benchmark_tts_seedtts \
         --generate-only \
         --meta seedtts_testset/en/meta.lst \
-        --model fishaudio/s2-pro --port 8000 --concurrency 8
+        --max-concurrency 16 \
+        --output-dir results/s2pro_en \
+        --model fishaudio/s2-pro --port 8000
 
-    # Phase 2: transcribe + WER only (server not needed)
+    # Transcribe + WER only
     python -m benchmarks.eval.benchmark_tts_seedtts \
         --transcribe-only \
         --meta seedtts_testset/en/meta.lst \
@@ -312,9 +318,11 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument(
         "--concurrency",
+        "--max-concurrency",
+        dest="concurrency",
         type=int,
         default=1,
-        help="Number of concurrent requests.",
+        help="Maximum concurrent requests.",
     )
     parser.add_argument(
         "--request-rate",
