@@ -1153,6 +1153,7 @@ def make_tts_send_fn(
     *,
     stream: bool = False,
     no_ref_audio: bool = False,
+    voice: str | None = None,
     save_audio_dir: str | None = None,
     **gen_kwargs,
 ) -> SendFn:
@@ -1166,7 +1167,12 @@ def make_tts_send_fn(
             text=sample.target_text[:TEXT_PREVIEW_LENGTH],
         )
         payload = _build_tts_payload(
-            sample, model_name, stream=stream, no_ref_audio=no_ref_audio, **gen_kwargs
+            sample,
+            model_name,
+            stream=stream,
+            no_ref_audio=no_ref_audio,
+            voice=voice,
+            **gen_kwargs,
         )
         start_time = time.perf_counter()
         try:

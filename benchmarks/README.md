@@ -29,6 +29,10 @@ python -m sglang_omni.cli.cli serve \
     --model-path fishaudio/s2-pro \
     --config examples/configs/s2pro_tts.yaml --port 8000
 
+# Voxtral-4B-TTS — for section 2d (plain TTS, no voice cloning)
+python -m sglang_omni.cli.cli serve \
+    --model-path mistralai/Voxtral-4B-TTS-2603 --port 8000
+
 # Qwen3-Omni, speech mode — for section 3 (SeedTTS; multi-GPU)
 python -m sglang_omni.cli.cli serve \
     --model-path Qwen/Qwen3-Omni-30B-A3B-Instruct --port 8000

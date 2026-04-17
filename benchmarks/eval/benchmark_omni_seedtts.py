@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 """SeedTTS benchmark for Qwen3-Omni: speed measurement and WER evaluation.
 
-Combines the legacy Omni TTS speed and WER flows into a two-phase
-pipeline: generate audio while the server is running, then transcribe without
-the server to avoid GPU OOM.
-
-The benchmark always persists generated WAVs to disk so the follow-up
-transcribe phase can reuse them without regenerating audio.  Callers who
-only need speed numbers may still pass ``--generate-only`` and discard the
-resulting ``audio/`` directory.
+Runs a two-phase pipeline on the SeedTTS test set: phase 1 sends
+chat-completion requests to a running Qwen3-Omni server and persists the
+generated WAVs; phase 2 loads those WAVs offline, transcribes them with an
+ASR model, and computes WER against the reference text. Persisting audio
+between phases lets the ASR model reuse the same GPU after the server
+exits, avoiding OOM. Use ``--generate-only`` or ``--transcribe-only`` to
+run a single phase.
 
 Usage (run from project root so ``benchmarks`` is on sys.path; use
 ``python -m benchmarks.eval.benchmark_omni_seedtts`` if invoking via a
@@ -307,7 +306,6 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="qwen3-omni",
         help="Model name for the API request.",
     )
-    # ``--testset`` is a legacy alias for ``--meta`` (kept for shell history).
     parser.add_argument(
         "--meta",
         "--testset",

@@ -1,24 +1,31 @@
 # SPDX-License-Identifier: Apache-2.0
 """SeedTTS benchmark for TTS models: speed and WER evaluation.
 
-Combines the legacy TTS speed and WER flows into a two-phase pipeline:
-generate audio while the server is running, then transcribe without the server
-to avoid GPU OOM.
+Runs a two-phase pipeline on the SeedTTS test set: phase 1 sends TTS
+requests to a running server and persists the generated WAVs; phase 2
+loads those WAVs offline, transcribes them with an ASR model, and
+computes WER against the reference text. Persisting audio between
+phases lets the ASR model reuse the same GPU after the server exits,
+avoiding OOM. Use ``--generate-only`` or ``--transcribe-only`` to run
+a single phase.
 
-The benchmark always persists generated WAVs to disk so the follow-up
-transcribe phase can reuse them without regenerating audio.  Callers who
-only need speed numbers may still pass ``--generate-only`` and discard the
-resulting ``audio/`` directory.
+Both voice-cloning models (e.g. ``fishaudio/s2-pro``, which reads
+``ref_audio``/``ref_text`` from the meta file) and plain TTS models
+(e.g. ``mistralai/Voxtral-4B-TTS-2603``, which selects a server-side
+speaker preset via ``--voice``) are supported through the same entry.
 
 Usage (run from project root so ``benchmarks`` is on sys.path; use
 ``python -m benchmarks.eval.benchmark_tts_seedtts`` if invoking via a
 subprocess from another directory):
-    # Full pipeline (generate + transcribe) for voice-clone models such as S2-Pro
+    # Full pipeline (generate + transcribe) for voice-clone models such as fishaudio/s2-pro
     python -m benchmarks.eval.benchmark_tts_seedtts \
         --meta seedtts_testset/en/meta.lst \
         --model fishaudio/s2-pro --port 8000
 
-    # Full pipeline for plain TTS models such as Voxtral
+    # Full pipeline for plain TTS models such as mistralai/Voxtral-4B-TTS-2603
+    # Launch the server first in a separate shell:
+    #     python -m sglang_omni.cli.cli serve \
+    #         --model-path mistralai/Voxtral-4B-TTS-2603 --port 8000
     python -m benchmarks.eval.benchmark_tts_seedtts \
         --meta seedtts_testset/en/meta.lst \
         --model mistralai/Voxtral-4B-TTS-2603 --port 8000 \
@@ -81,10 +88,14 @@ class TtsSeedttsBenchmarkConfig:
     base_url: str | None = None
     host: str = "localhost"
     port: int = 8000
+    # Optional speaker-preset name forwarded to the server as payload["voice"].
+    # Voxtral-4B-TTS-2603 uses it to pick a built-in speaker (defaults to
+    # "cheerful_female" server-side); voice-cloning models such as S2-Pro
+    # ignore it and take the speaker from ref_audio/ref_text instead.
     voice: str | None = None
-    # note (Chenyang): Default is voice-clone ON — S2-Pro's canonical flow
-    # uses the seed-tts-eval reference audio.  The legacy ``--no-ref-audio``
-    # CLI flag flips this to False for plain TTS.
+    # Default is voice-clone ON — S2-Pro's canonical flow uses the
+    # seed-tts-eval reference audio.  The ``--no-ref-audio`` CLI flag flips
+    # this to False for plain TTS models that do not accept ref audio.
     voice_clone: bool = True
     output_dir: str = "results/tts_seedtts"
     max_samples: int | None = None
@@ -250,9 +261,7 @@ async def benchmark(config: TtsSeedttsBenchmarkConfig) -> dict:
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="SeedTTS benchmark for TTS models."
-    )
+    parser = argparse.ArgumentParser(description="SeedTTS benchmark for TTS models.")
     parser.add_argument(
         "--base-url",
         type=str,
@@ -271,9 +280,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--voice",
         type=str,
         default=None,
-        help="Optional voice name for plain TTS models such as Voxtral.",
+        help=(
+            "Built-in speaker-preset name for plain TTS models that select a "
+            "voice server-side (e.g. mistralai/Voxtral-4B-TTS-2603 accepts "
+            "'cheerful_female'). Has no effect on voice-cloning models such "
+            "as fishaudio/s2-pro, which take the speaker from ref_audio in "
+            "the meta file."
+        ),
     )
-    # ``--testset`` is a legacy alias for ``--meta`` (kept for shell history).
     parser.add_argument(
         "--meta",
         "--testset",
