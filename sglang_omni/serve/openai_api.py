@@ -54,6 +54,11 @@ logger = logging.getLogger(__name__)
 MIME_TO_FORMAT = {mime: fmt for fmt, mime in FORMAT_MIME_TYPES.items()}
 
 
+def _is_bad_request_error(exc: Exception) -> bool:
+    message = str(exc)
+    return "exceeds thinker_max_seq_len" in message
+
+
 def create_app(
     client: Client,
     *,
@@ -190,6 +195,10 @@ async def _chat_non_stream(
             request_id=request_id,
             audio_format=audio_format,
         )
+    except RuntimeError as exc:
+        if _is_bad_request_error(exc):
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     except ClientError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     except Exception as exc:

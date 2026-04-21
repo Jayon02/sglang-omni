@@ -138,16 +138,15 @@ def serve(
             )
 
     if thinker_max_seq_len is not None:
-        thinker_stage = role_to_stage.get("thinker")
-        if thinker_stage is None:
+        if thinker_max_seq_len <= 0:
             raise typer.BadParameter(
-                "--thinker-max-seq-len is not supported by pipeline "
-                f"{type(merged_config).__name__}."
+                "--thinker-max-seq-len must be a positive integer."
             )
-        merged_config.apply_server_args_overrides(
-            stage_name=thinker_stage,
-            overrides={"thinker_max_seq_len": int(thinker_max_seq_len)},
-        )
+        for stage in merged_config.stages:
+            if stage.name == "thinker":
+                if stage.executor.args is None:
+                    stage.executor.args = {}
+                stage.executor.args["thinker_max_seq_len"] = int(thinker_max_seq_len)
 
     # print merged configuration
     print("=" * 20, "Merged Configuration", "=" * 20)
