@@ -138,7 +138,12 @@ def create_thinker_executor(
     def _request_builder(payload: StagePayload):
         state = load_state(payload)
         step_counters.pop(payload.request_id, None)
-        return build_thinker_request(state, params=payload.request.params)
+        return build_thinker_request(
+            state,
+            params=payload.request.params,
+            max_seq_len=max_seq_len,
+            request_id=payload.request_id,
+        )
 
     def _result_builder(payload: StagePayload, result: Any) -> StagePayload:
         state = load_state(payload)
@@ -216,6 +221,7 @@ def create_sglang_thinker_executor(
     model_path: str,
     *,
     gpu_id: int = 0,
+    thinker_max_seq_len: int = 8192,
     stream_fn=None,
     speech_enabled: bool = False,
 ) -> EngineExecutor:
@@ -243,6 +249,7 @@ def create_sglang_thinker_executor(
             params=payload.request.params,
             tokenizer=tokenizer,
             vocab_size=vocab_size,
+            max_seq_len=thinker_max_seq_len,
             request_id=payload.request_id,
             thinker_config=thinker_config,
         )
@@ -377,6 +384,7 @@ def create_sglang_thinker_executor_from_config(
         server_args=server_args,
         model_path=model_path,
         gpu_id=gpu_id,
+        thinker_max_seq_len=thinker_max_seq_len,
         speech_enabled=speech_enabled,
     )
     post_load_avail_mem = avail_gpu_mem(gpu_id)

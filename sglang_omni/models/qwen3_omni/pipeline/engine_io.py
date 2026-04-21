@@ -15,6 +15,24 @@ if TYPE_CHECKING:
     from sglang_omni.engines.omni.runtime.sglang_ar import SGLangARRequestData
 
 
+def _validate_prompt_seq_len(
+    input_ids: torch.Tensor,
+    *,
+    max_seq_len: int | None,
+    request_id: str | None = None,
+) -> None:
+    if max_seq_len is None:
+        return
+    prompt_len = int(input_ids.numel())
+    if prompt_len > max_seq_len:
+        suffix = f" for request {request_id}" if request_id is not None else ""
+        raise ValueError(
+            f"Prompt length {prompt_len} exceeds thinker_max_seq_len {max_seq_len}"
+            f"{suffix}. Reduce multimodal input length or increase "
+            "thinker_max_seq_len."
+        )
+
+
 def build_encoder_request(
     state: PipelineState, *, stage_name: str
 ) -> EncoderRequestData:
@@ -58,6 +76,8 @@ def build_thinker_request(
     state: PipelineState,
     *,
     params: dict[str, Any],
+    max_seq_len: int | None = None,
+    request_id: str | None = None,
 ) -> ARRequestData:
     prompt = state.prompt
     if not isinstance(prompt, dict):
@@ -66,6 +86,11 @@ def build_thinker_request(
     input_ids = prompt.get("input_ids")
     if not isinstance(input_ids, torch.Tensor):
         raise TypeError("prompt.input_ids must be a torch.Tensor")
+    _validate_prompt_seq_len(
+        input_ids,
+        max_seq_len=max_seq_len,
+        request_id=request_id,
+    )
 
     attention_mask = prompt.get("attention_mask")
     thinker_inputs = state.thinker_inputs or {}
@@ -160,6 +185,7 @@ def build_sglang_thinker_request(
     params: dict[str, Any],
     tokenizer: Any,
     vocab_size: int,
+    max_seq_len: int | None = None,
     request_id: str | None = None,
     thinker_config: Any = None,
 ) -> "SGLangARRequestData":
@@ -180,6 +206,11 @@ def build_sglang_thinker_request(
     input_ids = prompt.get("input_ids")
     if not isinstance(input_ids, torch.Tensor):
         raise TypeError("prompt.input_ids must be a torch.Tensor")
+    _validate_prompt_seq_len(
+        input_ids,
+        max_seq_len=max_seq_len,
+        request_id=request_id,
+    )
 
     input_ids = input_ids.to(dtype=torch.long)
 

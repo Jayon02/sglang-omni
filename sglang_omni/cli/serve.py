@@ -66,6 +66,13 @@ def serve(
             )
         ),
     ] = None,
+    thinker_max_seq_len: Annotated[
+        int | None,
+        typer.Option(
+            "--thinker-max-seq-len",
+            help="Override thinker max sequence length for Qwen3-style pipelines.",
+        ),
+    ] = None,
     log_level: Annotated[
         Literal["debug", "info", "warning", "error", "critical"],
         typer.Option(help="Log level (default: info)."),
@@ -129,6 +136,18 @@ def serve(
                 stage_name=stage_name,
                 overrides={"mem_fraction_static": final_mem_fraction_static},
             )
+
+    if thinker_max_seq_len is not None:
+        thinker_stage = role_to_stage.get("thinker")
+        if thinker_stage is None:
+            raise typer.BadParameter(
+                "--thinker-max-seq-len is not supported by pipeline "
+                f"{type(merged_config).__name__}."
+            )
+        merged_config.apply_server_args_overrides(
+            stage_name=thinker_stage,
+            overrides={"thinker_max_seq_len": int(thinker_max_seq_len)},
+        )
 
     # print merged configuration
     print("=" * 20, "Merged Configuration", "=" * 20)
