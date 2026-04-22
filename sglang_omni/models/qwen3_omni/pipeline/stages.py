@@ -682,6 +682,7 @@ def create_decode_executor(model_path: str) -> PreprocessingExecutor:
                 "output_ids": [],
                 "step": 0,
                 "is_final": True,
+                "finish_reason": None,
                 "extra_model_outputs": {},
             }
 
@@ -719,6 +720,10 @@ def create_decode_executor(model_path: str) -> PreprocessingExecutor:
             ):
                 result["text"] = tokenizer.decode(output_ids, skip_special_tokens=True)
                 result.setdefault("modality", "text")
+
+        finish_reason = thinker_out.get("finish_reason")
+        if finish_reason is not None:
+            result["finish_reason"] = finish_reason
 
         prompt_tokens = int(thinker_out.get("prompt_tokens", 0))
         completion_tokens = int(thinker_out.get("completion_tokens", 0))

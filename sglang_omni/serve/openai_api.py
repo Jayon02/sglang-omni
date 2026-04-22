@@ -163,10 +163,14 @@ def _register_chat_completions(app: FastAPI) -> None:
 
         if req.stream:
             # TODO: Align streaming bad-request behavior with upstream SGLang.
-            # SGLang validates request length at the HTTP layer before constructing
-            # StreamingResponse, so overlong streaming requests return plain HTTP 400.
-            # sglang-omni currently validates later in the pipeline, which is too
-            # late to change the streaming status code cleanly.
+            # Follow-up design:
+            # 1. Expose prompt tokenization at the HTTP layer.
+            # 2. In _chat before the stream branch, validate:
+            #      prompt_tokens = tokenizer(req.messages).input_ids
+            #      if len(prompt_tokens) >= server_thinker_max_seq_len:
+            #          raise HTTPException(status_code=400, detail="...")  # matches SGLang wording
+            # 3. Mirror SGLang's `serving_base.py` layout: single `try/except ValueError -> 400`
+            #    wrapping both streaming and non-streaming branches.
             return StreamingResponse(
                 _chat_stream(
                     client,
