@@ -52,11 +52,21 @@ from sglang_omni.serve.protocol import (
 
 logger = logging.getLogger(__name__)
 MIME_TO_FORMAT = {mime: fmt for fmt, mime in FORMAT_MIME_TYPES.items()}
+_BAD_REQUEST_MARKERS = (
+    "longer than the model's context length",
+    "Requested token count exceeds the model's maximum context length",
+)
 
 
 def _is_bad_request_error(exc: Exception) -> bool:
+    # TODO(#<new-follow-up-issue>): replace with structured error code.
+    # Worker → coordinator currently serializes exceptions to str, so
+    # 400 vs 500 must be recovered via phrase match. See Ccyest's proposal
+    # on #330 for the end-to-end design (CompleteMessage.error_code).
+    # These markers must stay in sync with SGLang's ValueError wording:
+    #   - managers/tokenizer_manager.py:761, 791
     message = str(exc)
-    return "exceeds thinker_max_seq_len" in message
+    return any(marker in message for marker in _BAD_REQUEST_MARKERS)
 
 
 def create_app(

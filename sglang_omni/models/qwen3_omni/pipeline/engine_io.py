@@ -19,17 +19,28 @@ def _validate_prompt_seq_len(
     input_ids: torch.Tensor,
     *,
     max_seq_len: int | None,
+    max_new_tokens: int | None = None,
     request_id: str | None = None,
 ) -> None:
     if max_seq_len is None:
         return
     prompt_len = int(input_ids.numel())
-    if prompt_len > max_seq_len:
-        suffix = f" for request {request_id}" if request_id is not None else ""
+    if prompt_len >= max_seq_len:
         raise ValueError(
-            f"Prompt length {prompt_len} exceeds thinker_max_seq_len {max_seq_len}"
-            f"{suffix}. Reduce multimodal input length or increase "
-            "thinker_max_seq_len."
+            f"The input ({prompt_len} tokens) is longer than the model's "
+            f"context length ({max_seq_len} tokens)."
+        )
+    if max_new_tokens is None:
+        return
+    total_tokens = prompt_len + int(max_new_tokens)
+    if total_tokens >= max_seq_len:
+        raise ValueError(
+            f"Requested token count exceeds the model's maximum context length "
+            f"of {max_seq_len} tokens. You requested a total of {total_tokens} "
+            f"tokens: {prompt_len} tokens from the input messages and "
+            f"{int(max_new_tokens)} tokens for the completion. Please reduce "
+            f"the number of tokens in the input messages or the completion to "
+            f"fit within the limit."
         )
 
 
@@ -89,6 +100,7 @@ def build_thinker_request(
     _validate_prompt_seq_len(
         input_ids,
         max_seq_len=max_seq_len,
+        max_new_tokens=params.get("max_new_tokens"),
         request_id=request_id,
     )
 
@@ -209,6 +221,7 @@ def build_sglang_thinker_request(
     _validate_prompt_seq_len(
         input_ids,
         max_seq_len=max_seq_len,
+        max_new_tokens=params.get("max_new_tokens"),
         request_id=request_id,
     )
 
