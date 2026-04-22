@@ -162,6 +162,11 @@ def _register_chat_completions(app: FastAPI) -> None:
             audio_format = req.audio.get("format", "wav")
 
         if req.stream:
+            # TODO: Align streaming bad-request behavior with upstream SGLang.
+            # SGLang validates request length at the HTTP layer before constructing
+            # StreamingResponse, so overlong streaming requests return plain HTTP 400.
+            # sglang-omni currently validates later in the pipeline, which is too
+            # late to change the streaming status code cleanly.
             return StreamingResponse(
                 _chat_stream(
                     client,
