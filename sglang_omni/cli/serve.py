@@ -9,6 +9,10 @@ import yaml
 from sglang_omni.config.manager import ConfigManager
 from sglang_omni.serve.launcher import launch_server
 
+# Role-based stage name convention shared across Qwen3-Omni / Ming-Omni pipelines.
+# Matches the existing `role_values` dict below and each pipeline's THINKER_STAGE.
+_THINKER_STAGE_NAME = "thinker"
+
 
 def serve(
     ctx: typer.Context,
@@ -142,11 +146,15 @@ def serve(
             raise typer.BadParameter(
                 "--thinker-max-seq-len must be a positive integer."
             )
-        for stage in merged_config.stages:
-            if stage.name == "thinker":
-                if stage.executor.args is None:
-                    stage.executor.args = {}
-                stage.executor.args["thinker_max_seq_len"] = int(thinker_max_seq_len)
+        if _THINKER_STAGE_NAME not in {stage.name for stage in merged_config.stages}:
+            raise typer.BadParameter(
+                "--thinker-max-seq-len is not supported by pipeline "
+                f"{type(merged_config).__name__}."
+            )
+        merged_config.apply_server_args_overrides(
+            stage_name=_THINKER_STAGE_NAME,
+            overrides={"thinker_max_seq_len": int(thinker_max_seq_len)},
+        )
 
     # print merged configuration
     print("=" * 20, "Merged Configuration", "=" * 20)

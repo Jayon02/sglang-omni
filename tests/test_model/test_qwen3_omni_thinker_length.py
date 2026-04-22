@@ -59,6 +59,8 @@ def server_process(tmp_path_factory: pytest.TempPathFactory):
 
 
 def test_overlong_prompt_returns_400(server_process: subprocess.Popen) -> None:
+    # Use many space-separated `a`s so BPE merges cannot collapse the token
+    # count below THINKER_MAX_SEQ_LEN (= 128). ~10k tokens dwarfs 128.
     resp = _post_chat(
         server_process.port,
         {
@@ -66,10 +68,7 @@ def test_overlong_prompt_returns_400(server_process: subprocess.Popen) -> None:
             "messages": [
                 {
                     "role": "user",
-                    "content": (
-                        "Please repeat the following text exactly: "
-                        + " ".join(["a"] * 120)
-                    ),
+                    "content": "a " * 10000,
                 }
             ],
             "max_tokens": 16,

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 import torch
@@ -13,6 +14,14 @@ from sglang_omni.models.qwen3_omni.io import PipelineState, ThinkerOutput
 
 if TYPE_CHECKING:
     from sglang_omni.engines.omni.runtime.sglang_ar import SGLangARRequestData
+
+
+logger = logging.getLogger(__name__)
+
+# Fallback when the upstream request does not set `max_new_tokens`. Kept in sync
+# with the sampling defaults used by the thinker executor so that prompt-length
+# validation and actual generation agree on the same budget.
+_DEFAULT_THINKER_MAX_NEW_TOKENS = 2048
 
 
 def _validate_prompt_seq_len(
@@ -26,6 +35,10 @@ def _validate_prompt_seq_len(
         return
     prompt_len = int(input_ids.numel())
     if prompt_len >= max_seq_len:
+        logger.info(
+            f"rejecting request {request_id}: prompt {prompt_len} tokens "
+            f">= max_seq_len {max_seq_len}"
+        )
         raise ValueError(
             f"The input ({prompt_len} tokens) is longer than the model's "
             f"context length ({max_seq_len} tokens)."
@@ -34,6 +47,11 @@ def _validate_prompt_seq_len(
         return
     total_tokens = prompt_len + int(max_new_tokens)
     if total_tokens >= max_seq_len:
+        logger.info(
+            f"rejecting request {request_id}: prompt {prompt_len} + "
+            f"max_new_tokens {int(max_new_tokens)} = {total_tokens} tokens "
+            f">= max_seq_len {max_seq_len}"
+        )
         raise ValueError(
             f"Requested token count exceeds the model's maximum context length "
             f"of {max_seq_len} tokens. You requested a total of {total_tokens} "
@@ -97,7 +115,7 @@ def build_thinker_request(
     input_ids = prompt.get("input_ids")
     if not isinstance(input_ids, torch.Tensor):
         raise TypeError("prompt.input_ids must be a torch.Tensor")
-    max_new_tokens = params.get("max_new_tokens", 2048)
+    max_new_tokens = params.get("max_new_tokens", _DEFAULT_THINKER_MAX_NEW_TOKENS)
     _validate_prompt_seq_len(
         input_ids,
         max_seq_len=max_seq_len,
@@ -219,7 +237,7 @@ def build_sglang_thinker_request(
     input_ids = prompt.get("input_ids")
     if not isinstance(input_ids, torch.Tensor):
         raise TypeError("prompt.input_ids must be a torch.Tensor")
-    max_new_tokens = params.get("max_new_tokens", 2048)
+    max_new_tokens = params.get("max_new_tokens", _DEFAULT_THINKER_MAX_NEW_TOKENS)
     _validate_prompt_seq_len(
         input_ids,
         max_seq_len=max_seq_len,
