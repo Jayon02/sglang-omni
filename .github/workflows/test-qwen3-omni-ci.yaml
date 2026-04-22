@@ -18,15 +18,6 @@ permissions:
 #                              ├─► stage-4-mmmu-tts-consistency
 #                              ├─► stage-5-mmsu
 #                              └─► stage-6-mmsu-tts-consistency
-#
-# Rationale:
-#   * `docs` is the only job that installs deps and warms the venv cache.
-#   * `stage-1-thinker` is a fast smoke test — if it fails, skip the expensive
-#     downstream evals.
-#   * stage-2..6 are mutually independent accuracy/quality suites, so a failure
-#     in one must NOT skip the others. They fan out from stage-1 and are
-#     serialized by runner availability (single-GPU self-hosted runners will
-#     queue them naturally).
 
 jobs:
   docs:
@@ -137,6 +128,7 @@ jobs:
             */speed_results.json
             */wer_results.json
           artifact-upload-name: qwen3-omni-tts-results
+          artifact-upload-path: /tmp/**/*_results.json
 
   stage-3-mmmu:
     name: stage 3 - MMMU accuracy + speed
@@ -171,6 +163,7 @@ jobs:
           artifact-path-globs: |
             */mmmu/mmmu_results.json
           artifact-upload-name: qwen3-omni-mmmu-results
+          artifact-upload-path: /tmp/**/mmmu_results.json
 
   stage-4-mmmu-tts-consistency:
     name: stage 4 - MMMU TTS consistency
@@ -205,6 +198,7 @@ jobs:
           artifact-path-globs: |
             */mmmu_audio/mmmu_results.json
           artifact-upload-name: qwen3-omni-mmmu-tts-consistency-results
+          artifact-upload-path: /tmp/**/mmmu_audio/mmmu_results.json
 
   stage-5-mmsu:
     name: stage 5 - MMSU accuracy + speed
@@ -239,6 +233,7 @@ jobs:
           artifact-path-globs: |
             */mmsu/mmsu_results.json
           artifact-upload-name: qwen3-omni-mmsu-results
+          artifact-upload-path: /tmp/**/mmsu/mmsu_results.json
           summary-only: "true"
 
   stage-6-mmsu-tts-consistency:
@@ -274,3 +269,4 @@ jobs:
           artifact-path-globs: |
             */mmsu_audio/mmsu_results.json
           artifact-upload-name: qwen3-omni-mmsu-tts-consistency-results
+          artifact-upload-path: /tmp/**/mmsu_audio/mmsu_results.json
