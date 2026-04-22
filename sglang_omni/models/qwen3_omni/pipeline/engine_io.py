@@ -97,10 +97,11 @@ def build_thinker_request(
     input_ids = prompt.get("input_ids")
     if not isinstance(input_ids, torch.Tensor):
         raise TypeError("prompt.input_ids must be a torch.Tensor")
+    max_new_tokens = params.get("max_new_tokens", 2048)
     _validate_prompt_seq_len(
         input_ids,
         max_seq_len=max_seq_len,
-        max_new_tokens=params.get("max_new_tokens"),
+        max_new_tokens=max_new_tokens,
         request_id=request_id,
     )
 
@@ -126,7 +127,7 @@ def build_thinker_request(
         ),
         model_inputs=model_inputs,
         capture_model_output_keys=tuple(capture_keys) if capture_keys else (),
-        max_new_tokens=params.get("max_new_tokens"),
+        max_new_tokens=max_new_tokens,
         temperature=params.get("temperature", 0.0),
     )
 
@@ -218,10 +219,11 @@ def build_sglang_thinker_request(
     input_ids = prompt.get("input_ids")
     if not isinstance(input_ids, torch.Tensor):
         raise TypeError("prompt.input_ids must be a torch.Tensor")
+    max_new_tokens = params.get("max_new_tokens", 2048)
     _validate_prompt_seq_len(
         input_ids,
         max_seq_len=max_seq_len,
-        max_new_tokens=params.get("max_new_tokens"),
+        max_new_tokens=max_new_tokens,
         request_id=request_id,
     )
 
@@ -276,7 +278,6 @@ def build_sglang_thinker_request(
     if "attention_mask" in model_inputs:
         model_inputs.pop("attention_mask", None)
 
-    max_new_tokens = params.get("max_new_tokens", 2048)
     temperature = params.get("temperature", 0.0)
 
     # Build SGLang SamplingParams and normalize
