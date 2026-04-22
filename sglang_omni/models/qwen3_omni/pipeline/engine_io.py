@@ -490,17 +490,12 @@ def apply_thinker_result(
             if result.input_ids is not None and hasattr(result.input_ids, "shape")
             else 0
         )
-        finish_reason = getattr(result, "finish_reason", None)
-        if finish_reason is None:
-            req_finish_reason = getattr(
-                getattr(result, "req", None), "finished_reason", None
-            )
-            if isinstance(req_finish_reason, dict):
-                finish_reason = req_finish_reason.get("type")
-            elif isinstance(req_finish_reason, str):
-                finish_reason = req_finish_reason
-            elif hasattr(req_finish_reason, "to_json"):
-                finish_reason = req_finish_reason.to_json().get("type")
+        finish_reason = None
+        req_finish_reason = getattr(
+            getattr(result, "req", None), "finished_reason", None
+        )
+        if hasattr(req_finish_reason, "to_json"):
+            finish_reason = req_finish_reason.to_json().get("type")
         thinker_out: ThinkerOutput = {
             "output_ids": output_ids,
             "step": len(output_ids),
