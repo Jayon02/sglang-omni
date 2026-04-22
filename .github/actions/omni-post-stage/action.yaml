@@ -1,0 +1,86 @@
+name: Omni Post-Stage
+description: >
+  Shared teardown for Qwen3-Omni CI stages. Prints matching result JSON files
+  to the log (optionally summary-only), uploads them as workflow artifacts,
+  and always reclaims the GPU by killing leftover processes.
+
+inputs:
+  stage-label:
+    description: Human-readable label used in the log banner (e.g. "MMMU", "TTS").
+    required: true
+  artifact-path-globs:
+    description: >
+      Newline-separated `find -path` globs (relative to /tmp) that identify
+      the result JSON files this stage produced. Leave empty to skip artifact
+      handling entirely.
+    required: false
+    default: ""
+  artifact-upload-name:
+    description: >
+      If set, uploads every matched file as a workflow artifact under this
+      name. Must be unique across the workflow run.
+    required: false
+    default: ""
+  summary-only:
+    description: >
+      When "true", strips the `per_sample` field before printing large result
+      files to the log. The uploaded artifact still contains the full data.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Collect matching result files
+      id: collect
+      if: ${{ inputs.artifact-path-globs != '' }}
+      shell: bash
+      env:
+        ARTIFACT_PATH_GLOBS: ${{ inputs.artifact-path-globs }}
+      run: |
+        matches_file="$(mktemp)"
+        while IFS= read -r pattern; do
+          [ -z "$pattern" ] && continue
+          find /tmp -path "$pattern" 2>/dev/null >> "$matches_file" || true
+        done <<< "$ARTIFACT_PATH_GLOBS"
+        sort -u "$matches_file" -o "$matches_file"
+        echo "matches_file=${matches_file}" >> "$GITHUB_OUTPUT"
+        echo "match_count=$(wc -l < "$matches_file")" >> "$GITHUB_OUTPUT"
+
+    - name: Print CI artifacts
+      if: ${{ inputs.artifact-path-globs != '' }}
+      shell: bash
+      env:
+        STAGE_LABEL: ${{ inputs.stage-label }}
+        SUMMARY_ONLY: ${{ inputs.summary-only }}
+        MATCHES_FILE: ${{ steps.collect.outputs.matches_file }}
+        MATCH_COUNT: ${{ steps.collect.outputs.match_count }}
+      run: |
+        echo "=== Qwen3-Omni ${STAGE_LABEL} CI results (${MATCH_COUNT} file(s)) ==="
+        if [ "${MATCH_COUNT}" = "0" ]; then
+          echo "(no matching result files found)"
+          exit 0
+        fi
+        while IFS= read -r f; do
+          echo "--- $f ---"
+          if [ "$SUMMARY_ONLY" = "true" ]; then
+            python -c "import json,sys; d=json.load(open(sys.argv[1])); d.pop('per_sample',None); print(json.dumps(d, indent=2, ensure_ascii=False))" "$f"
+          else
+            cat "$f"
+          fi
+          echo ""
+        done < "${MATCHES_FILE}"
+
+    - name: Upload CI artifacts
+      if: ${{ inputs.artifact-upload-name != '' && steps.collect.outputs.match_count != '0' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-upload-name }}
+        path: /tmp/**/*_results.json
+        if-no-files-found: ignore
+        retention-days: 7
+
+    - name: Kill GPU processes
+      shell: bash
+      run: |
+        bash .github/scripts/delete_gpu_process.sh

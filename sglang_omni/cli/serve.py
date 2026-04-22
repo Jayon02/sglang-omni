@@ -9,8 +9,6 @@ import yaml
 from sglang_omni.config.manager import ConfigManager
 from sglang_omni.serve.launcher import launch_server
 
-# Role-based stage name convention shared across Qwen3-Omni / Ming-Omni pipelines.
-# Matches the existing `role_values` dict below and each pipeline's THINKER_STAGE.
 _THINKER_STAGE_NAME = "thinker"
 
 

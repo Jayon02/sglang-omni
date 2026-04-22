@@ -126,10 +126,6 @@ def _route_thinker_max_seq_len(
     stage_name: str,
     overrides: dict[str, Any],
 ) -> dict[str, Any]:
-    # thinker_max_seq_len is a factory kwarg on the thinker executor, not a
-    # SGLang server arg. Peel it off and assign it directly to the stage so
-    # it does not leak into `server_args_overrides` where it would fail
-    # `ServerArgs(**kwargs)`.
     remaining = dict(overrides)
     thinker_max_seq_len = remaining.pop("thinker_max_seq_len", None)
     if thinker_max_seq_len is None or stage_name != THINKER_STAGE:

@@ -18,9 +18,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Fallback when the upstream request does not set `max_new_tokens`. Kept in sync
-# with the sampling defaults used by the thinker executor so that prompt-length
-# validation and actual generation agree on the same budget.
 _DEFAULT_THINKER_MAX_NEW_TOKENS = 2048
 
 
@@ -298,7 +295,6 @@ def build_sglang_thinker_request(
 
     temperature = params.get("temperature", 0.0)
 
-    # Build SGLang SamplingParams and normalize
     sampling_params = SamplingParams(
         max_new_tokens=max_new_tokens,
         temperature=temperature,
