@@ -1,13 +1,13 @@
 # SGLang Omni Benchmarks
 
 Benchmark suite for SGLang Omni, covering performance (latency, throughput, RTF)
-and accuracy (WER, MMSU, MMMU) across supported modality combinations.
+and accuracy (WER, MMSU, MMMU, Video-MME) across supported modality combinations.
 
 ## Directory Structure
 
 ```
 benchmarks/
-├── tasks/          # Per-task logic (tts, audio_understanding, visual_understand)
+├── tasks/          # Per-task logic (tts, audio_understanding, visual_understand, video_understanding)
 ├── metrics/        # Metric computation (performance, accuracy)
 ├── dataset/        # Dataset loaders + download helpers
 ├── benchmarker/    # Framework: runner, data structures, utilities
@@ -98,6 +98,10 @@ python -m benchmarks.eval.benchmark_omni_mmsu \
 # 5. Qwen3-Omni — MMMU (VLM accuracy, image input)
 python -m benchmarks.eval.benchmark_omni_mmmu \
     --model qwen3-omni --port 8000 --max-samples 50 --max-concurrency 16
+
+# 6. Qwen3-Omni — Video-MME (video understanding)
+python -m benchmarks.eval.benchmark_omni_videomme \
+    --model qwen3-omni --port 8000 --max-samples 50
 ```
 
 ## Eval Scripts
@@ -108,6 +112,7 @@ python -m benchmarks.eval.benchmark_omni_mmmu \
 | `eval/benchmark_omni_seedtts.py` | TTS speed + WER (unified) | Qwen3-Omni | `/v1/chat/completions` |
 | `eval/benchmark_omni_mmsu.py` | MMSU (audio comprehension) | Qwen3-Omni | `/v1/chat/completions` |
 | `eval/benchmark_omni_mmmu.py` | MMMU (VLM accuracy + speed) | Qwen3-Omni | `/v1/chat/completions` |
+| `eval/benchmark_omni_videomme.py` | Video-MME (video understanding) | Qwen3-Omni | `/v1/chat/completions` |
 
 The two `*_seedtts.py` scripts merge the previous `benchmark_*_tts_speed.py`
 and `voice_clone_*_wer.py` pairs into a single two-phase pipeline: phase 1
@@ -138,9 +143,11 @@ python -m benchmarks.dataset.prepare --dataset seedtts-50    # 50-sample subset
 python -m benchmarks.dataset.prepare --dataset mmmu          # full MMMU (30 subjects)
 python -m benchmarks.dataset.prepare --dataset mmmu-ci-50    # MMMU CI subset
 python -m benchmarks.dataset.prepare --dataset mmsu          # full MMSU (ddwang2000/MMSU)
+python -m benchmarks.dataset.prepare --dataset videomme-ci-50  # Video-MME CI subset
+python -m benchmarks.dataset.prepare --dataset videomme      # full Video-MME
 ```
 
 SeedTTS datasets are materialized into `./seedtts_testset/` (override with
-`--local-dir`).  MMMU/MMSU datasets are pre-warmed into the default
-HuggingFace cache and consumed via `datasets.load_dataset(repo_id)`, so
+`--local-dir`). MMMU/MMSU/Video-MME datasets are pre-warmed into the default
+HuggingFace cache and then consumed via `datasets.load_dataset(repo_id)`, so
 `--local-dir` is a no-op for them.
