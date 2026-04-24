@@ -7,10 +7,12 @@ Usage:
     python -m benchmarks.dataset.prepare --dataset seedtts-mini
     python -m benchmarks.dataset.prepare --dataset seedtts-50
 
-    # MMMU / MMSU (pre-warm the HuggingFace datasets cache)
+    # MMMU / MMSU / Video-MME (pre-warm the HuggingFace datasets cache)
     python -m benchmarks.dataset.prepare --dataset mmmu
     python -m benchmarks.dataset.prepare --dataset mmmu-ci-50
     python -m benchmarks.dataset.prepare --dataset mmsu
+    python -m benchmarks.dataset.prepare --dataset videomme
+    python -m benchmarks.dataset.prepare --dataset videomme-ci-50
 """
 
 from __future__ import annotations
@@ -30,6 +32,8 @@ DATASETS: dict[str, str] = {
     "mmmu-ci-50": "zhaochenyang20/mmmu-ci-50",
     "mmsu": "ddwang2000/MMSU",
     "mmsu-ci-2000": "zhaochenyang20/mmsu-ci-2000",
+    "videomme": "zhaochenyang20/Video_MME",
+    "videomme-ci-50": "zhaochenyang20/Video_MME_ci",
 }
 
 _CLI_LOCAL_DIRS: dict[str, str] = {
