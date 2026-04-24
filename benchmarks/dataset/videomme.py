@@ -56,16 +56,13 @@ def _resolve_video_path(snapshot_dir: Path, row: dict, question_id: str) -> str 
     relative_path = row.get("video_path")
     if not relative_path:
         logger.warning(
-            "Skipping Video-MME sample %s because the dataset row has no video_path",
-            question_id,
+            f"Skipping Video-MME sample {question_id} because the dataset row has no video_path",
         )
         return None
     absolute_path = snapshot_dir / str(relative_path)
     if not absolute_path.exists():
         logger.warning(
-            "Skipping Video-MME sample %s because the video file does not exist at %s",
-            question_id,
-            absolute_path,
+            f"Skipping Video-MME sample {question_id} because the video file does not exist at {absolute_path}"
         )
         return None
     return str(absolute_path)
@@ -152,5 +149,5 @@ def load_videomme_samples(
         snapshot_dir=snapshot_dir,
         max_samples=max_samples,
     )
-    logger.info("Loaded %d Video-MME samples", len(samples))
+    logger.info(f"Loaded {len(samples)} Video-MME samples")
     return samples

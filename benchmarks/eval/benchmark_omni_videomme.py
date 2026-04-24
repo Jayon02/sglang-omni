@@ -6,24 +6,31 @@ test set via /v1/chat/completions with video input. Each sample is a
 multiple-choice question (A-D) grounded in a YouTube video clip, covering
 short, medium, and long durations across six domains.
 
+Note (Qiujiang, Chenyang):
+
+The full test split contains long videos whose prompts approach the 32k-token
+thinker context. We set --thinker-max-seq-len 32768 to accommodate the longest
+ ones, and --encoder-mem-reserve 0.20 to hold back ~28 GB of GPU memory for the
+co-located video encoder at peak activation.
+
+Detailed usage of the serving args can be found in https://github.com/sgl-project/sglang-omni/pull/339
+
 Usage:
 
-    # 1. Download the dataset (Video-MME test split, 2520 questions)
+    1. Download the dataset
+
     python -m benchmarks.dataset.prepare --dataset videomme
 
-    # 2. Launch the thinker-only server. The full test split contains
-    #    long videos whose prompts approach the 32k-token thinker context;
-    #    --thinker-max-seq-len 32768 accommodates the longest ones, and
-    #    --encoder-mem-reserve 0.20 holds back ~28 GB of GPU memory for
-    #    the co-located video encoder at peak activation, outside SGLang's
-    #    static KV pool.
-    python examples/run_qwen3_omni_server.py \
+    2. Launch the thinker-only server
+
+    python -m sglang_omni.cli.cli serve \
         --model-path Qwen/Qwen3-Omni-30B-A3B-Instruct \
         --port 8000 \
         --thinker-max-seq-len 32768 \
         --encoder-mem-reserve 0.20
 
-    # 3. Run the full 2520-sample benchmark at concurrency 4
+    3. Run the benchmark
+
     python benchmarks/eval/benchmark_omni_videomme.py \
         --model qwen3-omni --port 8000 \
         --max-concurrency 4 --max-tokens 256
