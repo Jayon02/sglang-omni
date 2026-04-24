@@ -10,8 +10,21 @@ Note (Qiujiang, Chenyang):
 
 The full test split contains long videos whose prompts approach the 32k-token
 thinker context. We set --thinker-max-seq-len 32768 to accommodate the longest
- ones, and --encoder-mem-reserve 0.20 to hold back ~28 GB of GPU memory for the
+ones, and --encoder-mem-reserve 0.40 to hold back ~56 GB of GPU memory for the
 co-located video encoder at peak activation.
+
+TODO (Qiujiang, Chenyang):
+
+We are facing extremely fragmented memory allocation when processing long videos.
+
+In CI of test_qwen3_omni_videomme_ci.py, we use --encoder-mem-reserve 0.20
+on the 50-sample videomme-ci-50 subset. The smaller reserve is sufficient
+there because the per-server request budget never crosses the threshold where
+encoder-activation fragmentation starts dropping requests. At 100 samples on
+the test-split prefix,0.40 is the smallest reserve that empirically completes
+100 sequential requests without dropped responses; going above 0.40 leaves
+ SGLang with too little KV pool to boot.
+
 
 Detailed usage of the serving args can be found in https://github.com/sgl-project/sglang-omni/pull/339
 
@@ -23,31 +36,37 @@ Usage:
 
     2. Launch the thinker-only server
 
-    python -m sglang_omni.cli.cli serve \
+    python examples/run_qwen3_omni_server.py \
         --model-path Qwen/Qwen3-Omni-30B-A3B-Instruct \
         --port 8000 \
         --thinker-max-seq-len 32768 \
-        --encoder-mem-reserve 0.20
+        --encoder-mem-reserve 0.40
 
-    3. Run the benchmark
+    3. Run the benchmark (--max-samples matches the reference table below)
 
     python benchmarks/eval/benchmark_omni_videomme.py \
         --model qwen3-omni --port 8000 \
-        --max-concurrency 4 --max-tokens 256
+        --max-concurrency 4 --max-tokens 256 --max-samples 100
 
 
-H200 Full-Set Reference Results
+H200 Reference Results
 
-Reproducibility references for the FULL 2520-sample test split — NOT CI
-thresholds. CI runs on the 50-sample subset videomme-ci-50 and keeps its
-own thresholds in tests/test_model/test_qwen3_omni_videomme_ci.py.
 
-Benchmark:  Video-MME | Dataset: lmms-lab/Video-MME test split
-                       (2520 questions: 900 short + 900 medium + 720 long)
-Hardware:   1 x H200 (thinker-only; speech disabled)
-Launch:     --thinker-max-seq-len 32768 --encoder-mem-reserve 0.20
-Bench:      --max-concurrency 4 --max-tokens 256
-Run status: TBD — full-set pending re-run on main after task-5 merge.
+Benchmark: Video-MME | Dataset: lmms-lab/Video-MME test split (2520 questions full; first N samples used here)
+Hardware:  1 x H200
+Last verified: 2026-04-24
+
+Accuracy (summary)
+
+| Model      | Config                          | accuracy | correct | failed | mc_fallback | Source                                                              |
+| ---------- | ------------------------------- | -------- | ------- | ------ | ----------- | ------------------------------------------------------------------- |
+| Qwen3-Omni | thinker-only, encoder-reserve=0.40 | 76.00% | 76/100  | 0      | 2           | PR #327 [H200, first-100 prefix, c=4, max_tokens=256] |
+
+Speed (speed)
+
+| Model      | Config                             | latency_mean_s | latency_p95_s | throughput_qps | tok_per_s_mean | tok_per_s_agg | Source                                                |
+| ---------- | ---------------------------------- | -------------- | ------------- | -------------- | -------------- | ------------- | ----------------------------------------------------- |
+| Qwen3-Omni | thinker-only, encoder-reserve=0.40 | 42.96          | 76.17         | 0.093          | 2.80           | 2.60          | PR #327 [H200, first-100 prefix, c=4, max_tokens=256] |
 """
 
 
