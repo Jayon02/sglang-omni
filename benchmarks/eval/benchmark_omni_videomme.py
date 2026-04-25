@@ -36,10 +36,11 @@ Usage:
 
     2. Launch the thinker-only server
 
-    python examples/run_qwen3_omni_server.py \
+    python -m sglang_omni.cli serve \
         --model-path Qwen/Qwen3-Omni-30B-A3B-Instruct \
         --port 8000 \
         --thinker-max-seq-len 32768 \
+        --text-only \
         --encoder-mem-reserve 0.40
 
     3. Run the benchmark (--max-samples matches the reference table below)

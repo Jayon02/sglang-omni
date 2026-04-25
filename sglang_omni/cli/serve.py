@@ -75,6 +75,20 @@ def serve(
             help="Override thinker max sequence length for Qwen3-style pipelines.",
         ),
     ] = None,
+    encoder_mem_reserve: Annotated[
+        float | None,
+        typer.Option(
+            "--encoder-mem-reserve",
+            help=(
+                "Reserve a fraction of GPU memory for the co-located encoder by "
+                "subtracting it from SGLang's auto-picked mem_fraction_static. "
+                "Required for long-video / large-encoder workloads where "
+                "encoder activation peaks would otherwise OOM. Mutually "
+                "exclusive with --mem-fraction-static and "
+                "--thinker-mem-fraction-static. Must be in [0, 1)."
+            ),
+        ),
+    ] = None,
     log_level: Annotated[
         Literal["debug", "info", "warning", "error", "critical"],
         typer.Option(help="Log level (default: info)."),
@@ -152,6 +166,24 @@ def serve(
         merged_config.apply_server_args_overrides(
             stage_name=_THINKER_STAGE_NAME,
             overrides={"thinker_max_seq_len": int(thinker_max_seq_len)},
+        )
+
+    if encoder_mem_reserve is not None:
+        if not 0.0 <= encoder_mem_reserve < 1.0:
+            raise typer.BadParameter("--encoder-mem-reserve must be in [0, 1)")
+        if mem_fraction_static is not None or thinker_mem_fraction_static is not None:
+            raise typer.BadParameter(
+                "--encoder-mem-reserve is mutually exclusive with "
+                "--mem-fraction-static and --thinker-mem-fraction-static"
+            )
+        if _THINKER_STAGE_NAME not in {stage.name for stage in merged_config.stages}:
+            raise typer.BadParameter(
+                "--encoder-mem-reserve is not supported by pipeline "
+                f"{type(merged_config).__name__}."
+            )
+        merged_config.apply_server_args_overrides(
+            stage_name=_THINKER_STAGE_NAME,
+            overrides={"encoder_mem_reserve": float(encoder_mem_reserve)},
         )
 
     # print merged configuration
