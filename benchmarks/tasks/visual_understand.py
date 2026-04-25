@@ -22,6 +22,14 @@ logger = logging.getLogger(__name__)
 SUMMARY_LABEL_WIDTH = 28
 SUMMARY_LINE_WIDTH = 50
 
+MULTI_CHOICE_INSTRUCTION = (
+    "\nAnswer the following multiple-choice question. "
+    "The last line of your response should be of the "
+    "following format: 'Answer: $LETTER' (without quotes) "
+    "where LETTER is one of the options. "
+    "Think step by step before answering."
+)
+
 
 def _check_is_number(s: str) -> bool:
     try:

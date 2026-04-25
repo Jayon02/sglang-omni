@@ -13,6 +13,8 @@ from huggingface_hub import snapshot_download
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_REPO_ID = "zhaochenyang20/Video_MME"
+
 
 @dataclass
 class VideoMMESample:
@@ -38,17 +40,13 @@ def _strip_option_prefix(option: str) -> str:
 
 
 def format_videomme_prompt(question: str, options: list[str]) -> str:
+    from benchmarks.tasks.visual_understand import MULTI_CHOICE_INSTRUCTION
+
     prompt = f"{question.strip()}\n"
     for index, option in enumerate(options):
         letter = chr(ord("A") + index)
         prompt += f"{letter}. {option}\n"
-    prompt += (
-        "\nAnswer the following multiple-choice question. "
-        "The last line of your response should be of the "
-        "following format: 'Answer: $LETTER' (without quotes) "
-        "where LETTER is one of the options. "
-        "Think step by step before answering."
-    )
+    prompt += MULTI_CHOICE_INSTRUCTION
     return prompt
 
 
@@ -139,7 +137,7 @@ def load_videomme_samples(
     repo_id: str | None = None,
     split: str = "test",
 ) -> list[VideoMMESample]:
-    resolved_repo_id = repo_id or "zhaochenyang20/Video_MME"
+    resolved_repo_id = repo_id or DEFAULT_REPO_ID
     snapshot_dir = Path(
         snapshot_download(repo_id=resolved_repo_id, repo_type="dataset")
     )

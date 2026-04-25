@@ -108,19 +108,15 @@ def format_mmmu_prompt(question: str, options: list[str]) -> str:
         Answer the following question. The last line of your response
         should be of the following format: 'Answer: $ANSWER' ...
     """
+    from benchmarks.tasks.visual_understand import MULTI_CHOICE_INSTRUCTION
+
     clean_question = _strip_image_tags(question)
     prompt = f"{clean_question}\n"
     if options:
         for i, opt in enumerate(options):
             letter = chr(ord("A") + i)
             prompt += f"{letter}. {opt}\n"
-        prompt += (
-            "\nAnswer the following multiple-choice question. "
-            "The last line of your response should be of the "
-            "following format: 'Answer: $LETTER' (without quotes) "
-            "where LETTER is one of the options. "
-            "Think step by step before answering."
-        )
+        prompt += MULTI_CHOICE_INSTRUCTION
     else:
         prompt += (
             "\nAnswer the following question. "

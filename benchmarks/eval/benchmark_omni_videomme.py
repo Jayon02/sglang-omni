@@ -48,9 +48,7 @@ Usage:
         --model qwen3-omni --port 8000 \
         --max-concurrency 4 --max-tokens 256 --max-samples 100
 
-
 H200 Reference Results
-
 
 Benchmark: Video-MME | Dataset: lmms-lab/Video-MME test split (2520 questions full; first N samples used here)
 Hardware:  1 x H200
@@ -60,13 +58,13 @@ Accuracy (summary)
 
 | Model      | Config                          | accuracy | correct | failed | mc_fallback | Source                                                              |
 | ---------- | ------------------------------- | -------- | ------- | ------ | ----------- | ------------------------------------------------------------------- |
-| Qwen3-Omni | thinker-only, encoder-reserve=0.40 | 76.00% | 76/100  | 0      | 2           | PR #327 [H200, first-100 prefix, c=4, max_tokens=256] |
+| Qwen3-Omni | thinker-only, encoder-reserve=0.40 | 77.00% | 77/100  | 0      | 1           | PR #327 [H200, first-100 prefix, c=4, max_tokens=256] |
 
 Speed (speed)
 
 | Model      | Config                             | latency_mean_s | latency_p95_s | throughput_qps | tok_per_s_mean | tok_per_s_agg | Source                                                |
 | ---------- | ---------------------------------- | -------------- | ------------- | -------------- | -------------- | ------------- | ----------------------------------------------------- |
-| Qwen3-Omni | thinker-only, encoder-reserve=0.40 | 42.96          | 76.17         | 0.093          | 2.80           | 2.60          | PR #327 [H200, first-100 prefix, c=4, max_tokens=256] |
+| Qwen3-Omni | thinker-only, encoder-reserve=0.40 | 42.53          | 67.62         | 0.094          | 2.70           | 2.60          | PR #327 [H200, first-100 prefix, c=4, max_tokens=256] |
 """
 
 
@@ -83,6 +81,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from benchmarks.benchmarker.runner import BenchmarkRunner, RunConfig
 from benchmarks.benchmarker.utils import save_json_results, wait_for_service
+from benchmarks.dataset.videomme import DEFAULT_REPO_ID as _VIDEOMME_DEFAULT_REPO
 from benchmarks.dataset.videomme import load_videomme_samples
 from benchmarks.metrics.performance import compute_speed_metrics
 from benchmarks.tasks.tts import print_speed_summary
@@ -173,8 +172,8 @@ async def run_videomme_eval(config: VideoMMEEvalConfig) -> dict:
     return results
 
 
-async def benchmark(args: argparse.Namespace) -> dict:
-    config = VideoMMEEvalConfig(
+def _config_from_args(args: argparse.Namespace) -> VideoMMEEvalConfig:
+    return VideoMMEEvalConfig(
         model=args.model,
         repo_id=args.repo_id,
         split=args.split,
@@ -190,6 +189,10 @@ async def benchmark(args: argparse.Namespace) -> dict:
         request_rate=args.request_rate,
         disable_tqdm=args.disable_tqdm,
     )
+
+
+async def benchmark(args: argparse.Namespace) -> dict:
+    config = _config_from_args(args)
     results = await run_videomme_eval(config)
     print_videomme_accuracy_summary(results["summary"], config.model)
     print_speed_summary(
@@ -215,11 +218,11 @@ def main() -> None:
         default=None,
         help=(
             "HuggingFace dataset repo for Video-MME. "
-            "Defaults to zhaochenyang20/Video_MME."
+            f"Defaults to {_VIDEOMME_DEFAULT_REPO}."
         ),
     )
     parser.add_argument("--split", type=str, default="test")
-    parser.add_argument("--output-dir", type=str, default="results/videomme")
+    parser.add_argument("--output-dir", type=str, default=None)
     parser.add_argument("--max-samples", type=int, default=None)
     parser.add_argument("--max-tokens", type=int, default=256)
     parser.add_argument("--temperature", type=float, default=0.0)

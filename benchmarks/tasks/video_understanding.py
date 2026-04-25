@@ -14,13 +14,14 @@ import aiohttp
 
 from benchmarks.benchmarker.data import RequestResult
 from benchmarks.benchmarker.runner import SendFn
+from benchmarks.benchmarker.utils import print_accuracy_breakdown
 from benchmarks.dataset.videomme import VideoMMESample
 from benchmarks.tasks.visual_understand import parse_multi_choice_response
 
 logger = logging.getLogger(__name__)
 
 SUMMARY_LABEL_WIDTH = 28
-SUMMARY_LINE_WIDTH = 52
+SUMMARY_LINE_WIDTH = 50
 
 
 def make_videomme_send_fn(
@@ -57,9 +58,7 @@ def make_videomme_send_fn(
 
             message = body.get("choices", [{}])[0].get("message", {})
             result.text = message.get("content", "") or ""
-            result.is_success = bool(result.text)
-            if not result.is_success:
-                result.error = "Empty response"
+            result.is_success = True
 
             usage = body.get("usage", {})
             if usage:
@@ -78,6 +77,23 @@ def make_videomme_send_fn(
         return result
 
     return send_fn
+
+
+def _finalize_breakdown(
+    buckets: dict[str, dict[str, int]]
+) -> dict[str, dict[str, Any]]:
+    return {
+        key: {
+            "total": value["total"],
+            "correct": value["correct"],
+            "accuracy": (
+                round(value["correct"] / value["total"], 4)
+                if value["total"] > 0
+                else 0.0
+            ),
+        }
+        for key, value in sorted(buckets.items())
+    }
 
 
 def compute_videomme_metrics(
@@ -168,30 +184,9 @@ def compute_videomme_metrics(
         "accuracy": round(correct / total, 4) if total > 0 else 0.0,
         "failed": failed,
         "mc_fallback": mc_fallback,
-        "per_duration": {
-            key: {
-                "total": value["total"],
-                "correct": value["correct"],
-                "accuracy": round(value["correct"] / value["total"], 4),
-            }
-            for key, value in sorted(per_duration.items())
-        },
-        "per_domain": {
-            key: {
-                "total": value["total"],
-                "correct": value["correct"],
-                "accuracy": round(value["correct"] / value["total"], 4),
-            }
-            for key, value in sorted(per_domain.items())
-        },
-        "per_task_type": {
-            key: {
-                "total": value["total"],
-                "correct": value["correct"],
-                "accuracy": round(value["correct"] / value["total"], 4),
-            }
-            for key, value in sorted(per_task_type.items())
-        },
+        "per_duration": _finalize_breakdown(per_duration),
+        "per_domain": _finalize_breakdown(per_domain),
+        "per_task_type": _finalize_breakdown(per_task_type),
     }
     return summary, per_sample
 
@@ -209,4 +204,7 @@ def print_videomme_accuracy_summary(metrics: dict[str, Any], model_name: str) ->
     )
     print(f"  {'Failed requests:':<{lw}} {metrics['failed']}")
     print(f"  {'MC parse fallback:':<{lw}} {metrics['mc_fallback']}")
+    print_accuracy_breakdown("By duration", metrics.get("per_duration", {}))
+    print_accuracy_breakdown("By domain", metrics.get("per_domain", {}))
+    print_accuracy_breakdown("By task type", metrics.get("per_task_type", {}))
     print(f"{'=' * SUMMARY_LINE_WIDTH}\n")
