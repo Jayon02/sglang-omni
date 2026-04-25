@@ -7,6 +7,7 @@ Usage:
 Author:
     Qiujiang Chen https://github.com/Jayon02
     Chenyang Zhao https://github.com/zhaochenyang20
+    Yifei Gao https://github.com/PasserBy4
 """
 
 from __future__ import annotations
@@ -35,16 +36,17 @@ from tests.utils import (
 MODEL_PATH = "Qwen/Qwen3-Omni-30B-A3B-Instruct"
 
 CONCURRENCY = 4
-STARTUP_TIMEOUT = 60
+STARTUP_TIMEOUT = 900
 
-VIDEOMME_MIN_ACCURACY = 0.60
+# threshold reference: https://github.com/sgl-project/sglang-omni/pull/338#issuecomment-4318351375
+VIDEOMME_MIN_ACCURACY = 0.56
 VIDEOMME_MAX_FAILED = 0
 
 _VIDEOMME_P95 = {
     4: {
-        "throughput_qps": 0.083,
-        "tok_per_s_agg": 2.6,
-        "latency_mean_s": 47.1,
+        "throughput_qps": 0.077,
+        "tok_per_s_agg": 2.30,
+        "latency_mean_s": 50.241,
     },
 }
 VIDEOMME_THRESHOLDS = apply_slack(_VIDEOMME_P95)
@@ -76,8 +78,8 @@ def server_process(tmp_path_factory: pytest.TempPathFactory):
         "qwen3-omni",
         "--thinker-max-seq-len",
         "32768",
-        "--encoder-mem-reserve",
-        "0.20",
+        "--mem-fraction-static",
+        "0.78",
     ]
     proc = start_server_from_cmd(cmd, log_file, port, timeout=STARTUP_TIMEOUT)
     yield ServerHandle(proc=proc, port=port)

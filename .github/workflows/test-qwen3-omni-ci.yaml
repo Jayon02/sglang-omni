@@ -301,9 +301,9 @@ jobs:
         if: always()
         uses: ./.github/actions/omni-post-stage
         with:
-          stage-label: Video-MME (accuracy + speed, summary only)
+          stage-label: Video-MME (accuracy + speed)
           artifact-path-globs: |
             */videomme/videomme_results.json
           artifact-upload-name: qwen3-omni-videomme-results
           artifact-upload-path: /tmp/**/videomme/videomme_results.json
-          summary-only: "true"
+          summary-only: "false"
