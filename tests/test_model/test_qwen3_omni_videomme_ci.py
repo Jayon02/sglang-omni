@@ -37,31 +37,7 @@ MODEL_PATH = "Qwen/Qwen3-Omni-30B-A3B-Instruct"
 CONCURRENCY = 4
 STARTUP_TIMEOUT = 60
 
-# Note (Chenyang): calibrated on H200 across 5 back-to-back fresh-server
-# pytest invocations of this test at concurrency=4 against the
-# zhaochenyang20/Video_MME_ci_25 dataset (first-25 prefix of the
-# parent Video_MME_ci 50-sample CI subset). Each pytest run starts
-# and stops its own server, so every data point sees a pristine GPU.
-# Observed per-run:
-#
-#   run_1: acc=0.60 correct=15/25 failed=0 tput=0.086 toks=2.6 lat=45.64
-#   run_2: acc=0.60 correct=15/25 failed=0 tput=0.086 toks=2.8 lat=45.50
-#   run_3: acc=0.60 correct=15/25 failed=0 tput=0.085 toks=2.7 lat=45.63
-#   run_4: acc=0.60 correct=15/25 failed=0 tput=0.088 toks=2.7 lat=44.49
-#   run_5: acc=0.56 correct=14/25 failed=0 tput=0.083 toks=2.6 lat=47.11
-#
-# Going from videomme-ci-50 to videomme-ci-25 cut wall-clock from
-# ~10 min/run to ~5 min/run AND eliminated the ~20% mid-run-OOM flake
-# the 50-sample subset showed at the same fixture (the shorter window
-# does not accumulate enough encoder-activation fragmentation on the
-# thinker GPU to push the pinned mem_fraction_static=0.729 over the
-# OOM line). MAX_FAILED is therefore back to 0 (worst-of-5) — any
-# regression that causes even one dropped request fails the test.
-# _VIDEOMME_P95 below feeds the worst-of-5 speed numbers (min
-# tput/toks, max lat); apply_slack(0.75, 1.25) derives the enforced
-# thresholds with ±25% machine-variance slack.
-
-VIDEOMME_MIN_ACCURACY = 0.56
+VIDEOMME_MIN_ACCURACY = 0.60
 VIDEOMME_MAX_FAILED = 0
 
 _VIDEOMME_P95 = {
